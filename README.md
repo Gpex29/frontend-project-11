@@ -4,3 +4,5 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/30c816e4f82babb3fdf3/maintainability)](https://codeclimate.com/github/Gpex29/frontend-project-11/maintainability)
 
 [![Test Coverage](https://api.codeclimate.com/v1/badges/30c816e4f82babb3fdf3/test_coverage)](https://codeclimate.com/github/Gpex29/frontend-project-11/test_coverage)
+
+Vercel link: https://rss-beta-bice.vercel.app/
