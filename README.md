@@ -3,4 +3,4 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/30c816e4f82babb3fdf3/maintainability)](https://codeclimate.com/github/Gpex29/frontend-project-11/maintainability)
 
-Vercel link: https://rss-beta-bice.vercel.app/
+Vercel link: https://frontend-project-11-hazel-nu.vercel.app/
