@@ -1,10 +1,9 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
-import axios from 'axios';
-import uniqueId from 'lodash/uniqueId.js';
 import resources from './locales/index.js';
-import watch from './view.js';
-import parse from './parse.js';
+import watch from './functions/view.js';
+import getPosts from './functions/getPosts.js';
+import request from './functions/request.js';
 
 const isRSSLink = (url) => /(\.rss|\.xml|\/rss\/|\/feed)/i.test(url);
 
@@ -23,10 +22,12 @@ export default async () => {
     form: {
       status: null,
       valid: false,
-      currentUrl: '',
+      visitedURL: [],
       errors: {},
+      loaded: false,
     },
     posts: [],
+    viewedPosts: new Set(),
     feeds: [],
   };
 
@@ -35,6 +36,7 @@ export default async () => {
       url: () => ({ key: 'errors.validation.unvalidURL' }),
     },
     mixed: {
+      required: () => ({ key: 'errors.validation.requirerd' }),
       notOneOf: () => ({ key: 'errors.validation.duplicate' }),
     },
   });
@@ -51,7 +53,7 @@ export default async () => {
 
   // 1
   elements.form.addEventListener('submit', (e) => {
-    const schema = yup.string().url().notOneOf([watchedState.form.currentUrl]);
+    const schema = yup.string().required().url().notOneOf(watchedState.form.visitedURL);
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
@@ -64,33 +66,37 @@ export default async () => {
           return;
         }
         watchedState.form.valid = true;
-        watchedState.form.currentUrl = url;
-        axios
-          .get(`https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`)
-          .then((response) => {
-            const contents = parse(response.data.contents);
-            const items = contents.querySelectorAll('item');
-            const currentPosts = [];
-            items.forEach((item) => {
-              const linkText = item.querySelector('title').textContent;
-              const link = item.querySelector('link').textContent;
-              const description = item.querySelector('description').textContent;
-              const post = {
-                id: uniqueId(), link, linkText, description,
-              };
-              currentPosts.push(post);
-            });
-            watchedState.posts.push(...currentPosts);
+        watchedState.form.visitedURL.push(url);
+        const requestPosts = () => {
+          request(url, watchedState, (contents) => {
+            const posts = getPosts(watchedState, contents);
+            watchedState.posts.push(...posts);
+            setTimeout(() => requestPosts(), 5000);
+          });
+        };
+        requestPosts();
+        const requestFeed = () => {
+          request(url, watchedState, (contents) => {
             const feedHeader = contents.querySelector('title').textContent;
             const feedText = contents.querySelector('description').textContent;
-            const feed = { id: uniqueId(), feedHeader, feedText };
+            const feed = { feedHeader, feedText };
             watchedState.feeds.push(feed);
+            watchedState.form.loaded = true;
           });
+        };
+        requestFeed();
       })
       .catch((error) => {
         watchedState.form.valid = false;
         const { message } = error;
         watchedState.form.errors = message;
+        watchedState.form.loaded = false;
       });
+  });
+  elements.postsContainer.addEventListener('click', ({ target }) => {
+    const { tagName, dataset: { id } } = target;
+    if (tagName === 'A' || tagName === 'BUTTON') {
+      watchedState.viewedPosts.add(id);
+    }
   });
 };

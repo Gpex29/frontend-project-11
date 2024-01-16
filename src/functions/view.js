@@ -11,6 +11,8 @@ export default (elements, i18n, state) => {
     }
     if (state.form.valid === true) {
       feedback.classList.replace('text-danger', 'text-success');
+    }
+    if (state.form.loaded === true) {
       feedback.textContent = i18n.t('success');
     }
   };
@@ -29,13 +31,18 @@ export default (elements, i18n, state) => {
         linkText, description, link, id,
       } = post;
       const li = document.createElement('li');
-      li.classList = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
+      li.classList = 'post list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
+      li.setAttribute('id', id);
       const a = document.createElement('a');
-      a.classList = 'fw-bold';
       a.setAttribute('href', link);
       a.setAttribute('data-id', id);
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
+      if (state.viewedPosts.has(id)) {
+        a.className = 'fw-normal';
+      } else {
+        a.className = 'fw-bold';
+      }
       a.textContent = linkText;
       const button = document.createElement('button');
       button.setAttribute('type', 'button');
@@ -91,15 +98,13 @@ export default (elements, i18n, state) => {
     divCard.appendChild(ul);
     elements.feedsContainer.appendChild(divCard);
   };
-
   const watchedState = onChange(state, (path) => {
-    if (path === 'form.valid') {
+    if (path === 'form.valid'
+        || path === 'form.errors'
+        || path === 'form.loaded') {
       renderForm();
     }
-    if (path === 'form.errors') {
-      renderForm();
-    }
-    if (path === 'posts') {
+    if (path === 'posts' || path === 'viewedPosts') {
       renderPosts();
     }
     if (path === 'feeds') {
