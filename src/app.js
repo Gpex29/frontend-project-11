@@ -24,6 +24,7 @@ export default async () => {
       valid: false,
       visitedURL: [],
       errors: {},
+      loading: false,
       loaded: false,
     },
     posts: [],
@@ -67,6 +68,8 @@ export default async () => {
         }
         watchedState.form.valid = true;
         watchedState.form.visitedURL.push(url);
+        watchedState.form.loading = true;
+        watchedState.form.loaded = false;
         const requestPosts = () => {
           request(url, watchedState, (contents) => {
             const posts = getPosts(watchedState, contents);
@@ -81,6 +84,7 @@ export default async () => {
             const feedText = contents.querySelector('description').textContent;
             const feed = { feedHeader, feedText };
             watchedState.feeds.push(feed);
+            watchedState.form.loading = false;
             watchedState.form.loaded = true;
           });
         };
@@ -90,6 +94,7 @@ export default async () => {
         watchedState.form.valid = false;
         const { message } = error;
         watchedState.form.errors = message;
+        watchedState.form.loading = false;
         watchedState.form.loaded = false;
       });
   });

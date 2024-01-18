@@ -13,6 +13,8 @@ const request = (url, state, onSuccess) => {
     })
     .catch(({ message }) => {
       state.form.valid = false;
+      state.form.loaded = false;
+      state.form.loading = false;
       if (message === 'Network Error') {
         state.form.errors = { key: 'errors.validation.network' };
       }

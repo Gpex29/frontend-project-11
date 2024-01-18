@@ -3,14 +3,21 @@ import onChange from 'on-change';
 
 export default (elements, i18n, state) => {
   const renderForm = () => {
-    const { feedback } = elements;
+    const { feedback, form } = elements;
     feedback.textContent = '';
+    const button = form.querySelector('button');
     if (state.form.valid === false) {
       feedback.textContent = i18n.t(state.form.errors.key);
       feedback.classList.add('text-danger');
     }
     if (state.form.valid === true) {
       feedback.classList.replace('text-danger', 'text-success');
+    }
+    if (state.form.loading === true) {
+      button.classList.add('disabled');
+    }
+    if (state.form.loading === false) {
+      button.classList.remove('disabled');
     }
     if (state.form.loaded === true) {
       feedback.textContent = i18n.t('success');
@@ -98,17 +105,19 @@ export default (elements, i18n, state) => {
     divCard.appendChild(ul);
     elements.feedsContainer.appendChild(divCard);
   };
+  const pathToRenderMap = {
+    'form.valid': renderForm,
+    'form.errors': renderForm,
+    'form.loading': renderForm,
+    'form.loaded': renderForm,
+    posts: renderPosts,
+    viewedPosts: renderPosts,
+    feeds: renderFeeds,
+  };
   const watchedState = onChange(state, (path) => {
-    if (path === 'form.valid'
-        || path === 'form.errors'
-        || path === 'form.loaded') {
-      renderForm();
-    }
-    if (path === 'posts' || path === 'viewedPosts') {
-      renderPosts();
-    }
-    if (path === 'feeds') {
-      renderFeeds();
+    const renderFunction = pathToRenderMap[path];
+    if (renderFunction) {
+      renderFunction();
     }
   });
   return watchedState;
