@@ -70,14 +70,6 @@ export default async () => {
         watchedState.form.visitedURL.push(url);
         watchedState.form.loading = true;
         watchedState.form.loaded = false;
-        const requestPosts = () => {
-          request(url, watchedState, (contents) => {
-            const posts = getPosts(watchedState, contents);
-            watchedState.posts.push(...posts);
-            setTimeout(() => requestPosts(), 5000);
-          });
-        };
-        requestPosts();
         const requestFeed = () => {
           request(url, watchedState, (contents) => {
             const feedHeader = contents.querySelector('title').textContent;
@@ -89,6 +81,14 @@ export default async () => {
           });
         };
         requestFeed();
+        const requestPosts = () => {
+          request(url, watchedState, (contents) => {
+            const posts = getPosts(watchedState, contents);
+            watchedState.posts.push(...posts);
+            setTimeout(() => requestPosts(), 5000);
+          });
+        };
+        requestPosts();
       })
       .catch((error) => {
         watchedState.form.valid = false;
