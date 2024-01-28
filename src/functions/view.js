@@ -35,7 +35,7 @@ export default (elements, i18n, state) => {
     ul.classList = 'list-group border-0 rounded-0';
     state.posts.forEach((post) => {
       const {
-        linkText, description, link, id,
+        title, description, link, id,
       } = post;
       const li = document.createElement('li');
       li.classList = 'post list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
@@ -50,7 +50,7 @@ export default (elements, i18n, state) => {
       } else {
         a.className = 'fw-bold';
       }
-      a.textContent = linkText;
+      a.textContent = title;
       const button = document.createElement('button');
       button.setAttribute('type', 'button');
       button.setAttribute('data-id', id);
@@ -62,7 +62,7 @@ export default (elements, i18n, state) => {
         const modalTitle = document.querySelector('.modal-title');
         const modalBody = document.querySelector('.modal-body');
         const modalLink = document.querySelector('.modal-footer > a');
-        modalTitle.textContent = linkText;
+        modalTitle.textContent = title;
         modalBody.textContent = description;
         modalLink.setAttribute('href', link);
       });
@@ -91,10 +91,10 @@ export default (elements, i18n, state) => {
       li.classList = 'list-group-item border-0 border-end-0';
       const h3 = document.createElement('h3');
       h3.classList = 'h6 m-0';
-      h3.textContent = feed.feedHeader;
+      h3.textContent = feed.title;
       const p = document.createElement('p');
       p.classList = 'm-0 small text-black-50';
-      p.textContent = feed.feedText;
+      p.textContent = feed.description;
       li.appendChild(h3);
       li.appendChild(p);
       ul.appendChild(li);
