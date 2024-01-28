@@ -12,6 +12,7 @@ export default async () => {
   const elements = {
     modal: document.getElementById('modal'),
     form: document.querySelector('form'),
+    input: document.getElementById('url-input'),
     feedback: document.querySelector('.feedback'),
     postsContainer: document.querySelector('.posts'),
     feedsContainer: document.querySelector('.feeds'),
@@ -87,6 +88,8 @@ export default async () => {
                 watchedState.form.errors = { key: 'errors.validation.network' };
               }
             });
+          elements.input.focus();
+          elements.input.value = '';
         })
         .catch((error) => {
           watchedState.form.valid = false;
@@ -94,6 +97,7 @@ export default async () => {
           watchedState.form.errors = message;
           watchedState.form.loading = false;
           watchedState.form.loaded = false;
+          elements.input.focus();
         });
     });
     updatePosts(watchedState);
