@@ -3,12 +3,13 @@ import onChange from 'on-change';
 
 export default (elements, i18n, state) => {
   const renderForm = () => {
-    const { feedback, form } = elements;
+    const { feedback, form, input } = elements;
     feedback.textContent = '';
     const button = form.querySelector('button');
     if (state.form.valid === false) {
       feedback.textContent = i18n.t(state.form.errors.key);
       feedback.classList.add('text-danger');
+      input.focus();
     }
     if (state.form.valid === true) {
       feedback.classList.replace('text-danger', 'text-success');
@@ -21,6 +22,8 @@ export default (elements, i18n, state) => {
     }
     if (state.form.loaded === true) {
       feedback.textContent = i18n.t('success');
+      input.focus();
+      input.value = '';
     }
   };
   const renderPosts = () => {

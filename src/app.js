@@ -53,6 +53,7 @@ export default async () => {
     const watchedState = watch(elements, i18n, state);
     watchedState.form.status = 'filling';
     elements.form.addEventListener('submit', (e) => {
+      watchedState.form.loaded = false;
       const schema = yup.string().required().url().notOneOf(watchedState.form.visitedURL);
       e.preventDefault();
       const formData = new FormData(e.target);
@@ -68,7 +69,6 @@ export default async () => {
           watchedState.form.valid = true;
           watchedState.form.visitedURL.push(url);
           watchedState.form.loading = true;
-          watchedState.form.loaded = false;
           axios
             .get(
               `https://allorigins.hexlet.app/get?disableCache=true&url=${url}`,
@@ -88,8 +88,6 @@ export default async () => {
                 watchedState.form.errors = { key: 'errors.validation.network' };
               }
             });
-          elements.input.focus();
-          elements.input.value = '';
         })
         .catch((error) => {
           watchedState.form.valid = false;
@@ -97,7 +95,6 @@ export default async () => {
           watchedState.form.errors = message;
           watchedState.form.loading = false;
           watchedState.form.loaded = false;
-          elements.input.focus();
         });
     });
     updatePosts(watchedState);
