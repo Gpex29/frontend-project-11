@@ -22,7 +22,7 @@ export default async () => {
   const initState = {
     form: {
       validationForm: null, // valid, unvalid
-      loadingProcess: 'idle', // loading, loaded
+      loadingProcess: null, // loading, loaded
       error: {},
     },
     posts: [],
@@ -49,7 +49,6 @@ export default async () => {
   }).then(() => {
     const watchedState = watch(elements, i18n, initState);
     elements.form.addEventListener('submit', (e) => {
-      watchedState.form.loadingProcess = 'idle';
       const visitedURL = watchedState.feeds.map(({ link }) => link);
       const schema = yup.string().required().url().notOneOf(visitedURL);
       e.preventDefault();
@@ -69,22 +68,21 @@ export default async () => {
               const feed = { title, description, link: url };
               watchedState.feeds.unshift(feed);
               watchedState.posts.unshift(...postsWithId);
-              watchedState.form.validationForm = 'valid';
               watchedState.form.loadingProcess = 'loaded';
-              console.log(watchedState.form);
+              watchedState.form.validationForm = 'valid';
             })
             .catch((error) => {
-              watchedState.form.loadingProcess = 'idle';
+              watchedState.form.loadingProcess = 'loaded';
               watchedState.form.validationForm = 'unvalid';
               const message = error.message === 'Network Error' ? 'network' : 'unvalidRSS';
               watchedState.form.error = { key: `errors.validation.${message}` };
             });
         })
         .catch((error) => {
+          watchedState.form.loadingProcess = 'loaded';
           watchedState.form.validationForm = 'unvalid';
           const { message } = error;
           watchedState.form.error = message;
-          watchedState.form.loadingProcess = 'idle';
         });
     });
 

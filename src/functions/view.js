@@ -3,38 +3,30 @@ import onChange from 'on-change';
 
 export default (elements, i18n, state) => {
   const renderForm = () => {
-    const { feedback, form, input } = elements;
-    const { validationForm, loadingProcess } = state.form;
-    feedback.textContent = '';
-    const button = form.querySelector('button');
-    switch (validationForm) {
-      case 'unvalid':
-        feedback.textContent = i18n.t(state.form.error.key);
-        feedback.classList.add('text-danger');
-        input.focus();
-        break;
-      case 'valid':
-        feedback.classList.replace('text-danger', 'text-success');
-        break;
-      default:
-        break;
+    const { feedback, input } = elements;
+    const { validationForm } = state.form;
+    if (validationForm === 'unvalid') {
+      feedback.textContent = i18n.t(state.form.error.key);
+      feedback.classList = 'feedback m-0 position-absolute small text-danger';
+      input.focus();
     }
-    switch (loadingProcess) {
-      case 'idle':
-        button.classList.remove('disabled');
-        break;
-      case 'loading':
-        button.classList.add('disabled');
-        feedback.textContent = '';
-        break;
-      case 'loaded':
-        feedback.textContent = i18n.t('success');
-        button.classList.remove('disabled');
-        input.focus();
-        input.value = '';
-        break;
-      default:
-        break;
+    if (validationForm === 'valid') {
+      feedback.classList = 'feedback m-0 position-absolute small text-success';
+      feedback.textContent = i18n.t('success');
+      input.focus();
+      input.value = '';
+    }
+  };
+  const renderLoadingForm = () => {
+    const { feedback, form } = elements;
+    const { loadingProcess } = state.form;
+    const button = form.querySelector('button');
+    if (loadingProcess === 'loading') {
+      button.classList.add('disabled');
+      feedback.textContent = '';
+    }
+    if (loadingProcess === 'loaded') {
+      button.classList.remove('disabled');
     }
   };
   const renderPosts = () => {
@@ -121,7 +113,7 @@ export default (elements, i18n, state) => {
   };
   const pathToRenderMap = {
     'form.validationForm': renderForm,
-    'form.loadingProcess': renderForm,
+    'form.loadingProcess': renderLoadingForm,
     'form.error': renderForm,
     posts: renderPosts,
     viewedPosts: renderPosts,
