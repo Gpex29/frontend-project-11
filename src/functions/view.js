@@ -4,26 +4,37 @@ import onChange from 'on-change';
 export default (elements, i18n, state) => {
   const renderForm = () => {
     const { feedback, form, input } = elements;
+    const { validationForm, loadingProcess } = state.form;
     feedback.textContent = '';
     const button = form.querySelector('button');
-    if (state.form.valid === false) {
-      feedback.textContent = i18n.t(state.form.errors.key);
-      feedback.classList.add('text-danger');
-      input.focus();
+    switch (validationForm) {
+      case 'unvalid':
+        feedback.textContent = i18n.t(state.form.error.key);
+        feedback.classList.add('text-danger');
+        input.focus();
+        break;
+      case 'valid':
+        feedback.classList.replace('text-danger', 'text-success');
+        break;
+      default:
+        break;
     }
-    if (state.form.valid === true) {
-      feedback.classList.replace('text-danger', 'text-success');
-    }
-    if (state.form.loading === true) {
-      button.classList.add('disabled');
-    }
-    if (state.form.loading === false) {
-      button.classList.remove('disabled');
-    }
-    if (state.form.loaded === true) {
-      feedback.textContent = i18n.t('success');
-      input.focus();
-      input.value = '';
+    switch (loadingProcess) {
+      case 'idle':
+        button.classList.remove('disabled');
+        break;
+      case 'loading':
+        button.classList.add('disabled');
+        feedback.textContent = '';
+        break;
+      case 'loaded':
+        feedback.textContent = i18n.t('success');
+        button.classList.remove('disabled');
+        input.focus();
+        input.value = '';
+        break;
+      default:
+        break;
     }
   };
   const renderPosts = () => {
@@ -109,10 +120,9 @@ export default (elements, i18n, state) => {
     elements.feedsContainer.appendChild(divCard);
   };
   const pathToRenderMap = {
-    'form.valid': renderForm,
-    'form.errors': renderForm,
-    'form.loading': renderForm,
-    'form.loaded': renderForm,
+    'form.validationForm': renderForm,
+    'form.loadingProcess': renderForm,
+    'form.error': renderForm,
     posts: renderPosts,
     viewedPosts: renderPosts,
     feeds: renderFeeds,

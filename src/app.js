@@ -1,12 +1,11 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
+import uniqueId from 'lodash/uniqueId.js';
 import resources from './locales/index.js';
 import watch from './functions/view.js';
 import parse from './functions/parse.js';
-import updatePosts from './functions/updatePosts.js';
-
-const isRSSLink = (url) => /(\.rss|\.xml|\/rss\/|\/feed)/i.test(url);
+import proxyUrl from './functions/proxyUrl.js';
 
 export default async () => {
   const elements = {
@@ -20,14 +19,11 @@ export default async () => {
 
   const defaultLanguage = 'ru';
 
-  const state = {
+  const initState = {
     form: {
-      status: null,
-      valid: false,
-      visitedURL: [],
-      errors: {},
-      loading: false,
-      loaded: false,
+      validationForm: null, // valid, unvalid
+      loadingProcess: 'idle', // loading, loaded
+      error: {},
     },
     posts: [],
     viewedPosts: new Set(),
@@ -45,59 +41,73 @@ export default async () => {
   });
 
   const i18n = i18next.createInstance();
+
   i18n.init({
     lng: defaultLanguage,
     debug: false,
     resources,
   }).then(() => {
-    const watchedState = watch(elements, i18n, state);
-    watchedState.form.status = 'filling';
+    const watchedState = watch(elements, i18n, initState);
     elements.form.addEventListener('submit', (e) => {
-      watchedState.form.loaded = false;
-      const schema = yup.string().required().url().notOneOf(watchedState.form.visitedURL);
+      watchedState.form.loadingProcess = 'idle';
+      const visitedURL = watchedState.feeds.map(({ link }) => link);
+      const schema = yup.string().required().url().notOneOf(visitedURL);
       e.preventDefault();
       const formData = new FormData(e.target);
       const url = formData.get('url');
       schema
         .validate(url)
         .then(() => {
-          if (!isRSSLink(url)) {
-            watchedState.form.valid = false;
-            watchedState.form.errors = { key: 'errors.validation.unvalidRSS' };
-            return;
-          }
-          watchedState.form.valid = true;
-          watchedState.form.visitedURL.push(url);
-          watchedState.form.loading = true;
+          watchedState.form.loadingProcess = 'loading';
           axios
             .get(
-              `https://allorigins.hexlet.app/get?disableCache=true&url=${url}`,
+              proxyUrl(url),
             )
             .then(({ data: { contents } }) => {
-              const { feed, posts } = parse(contents);
-              watchedState.feeds.unshift({ ...feed, link: url });
-              watchedState.posts.unshift(...posts);
-              watchedState.form.loading = false;
-              watchedState.form.loaded = true;
+              const { title, description, posts } = parse(contents);
+              const postsWithId = posts.map((post) => ({ ...post, id: uniqueId() }));
+              const feed = { title, description, link: url };
+              watchedState.feeds.unshift(feed);
+              watchedState.posts.unshift(...postsWithId);
+              watchedState.form.validationForm = 'valid';
+              watchedState.form.loadingProcess = 'loaded';
+              console.log(watchedState.form);
             })
-            .catch(({ message }) => {
-              watchedState.form.valid = false;
-              watchedState.form.loaded = false;
-              watchedState.form.loading = false;
-              if (message === 'Network Error') {
-                watchedState.form.errors = { key: 'errors.validation.network' };
-              }
+            .catch((error) => {
+              watchedState.form.loadingProcess = 'idle';
+              watchedState.form.validationForm = 'unvalid';
+              const message = error.message === 'Network Error' ? 'network' : 'unvalidRSS';
+              watchedState.form.error = { key: `errors.validation.${message}` };
             });
         })
         .catch((error) => {
-          watchedState.form.valid = false;
+          watchedState.form.validationForm = 'unvalid';
           const { message } = error;
-          watchedState.form.errors = message;
-          watchedState.form.loading = false;
-          watchedState.form.loaded = false;
+          watchedState.form.error = message;
+          watchedState.form.loadingProcess = 'idle';
         });
     });
+
+    const updatePosts = (state) => {
+      const { feeds, posts } = state;
+      const stateTitles = posts.map((post) => post.title);
+      const links = feeds.map(({ link }) => link);
+      const promises = links.map((link) => axios
+        .get(
+          proxyUrl(link),
+        )
+        .then(({ data: { contents } }) => {
+          const updateData = parse(contents);
+          const updateTitles = updateData.posts
+            .filter((post) => !stateTitles.includes(post.title))
+            .map((post) => ({ ...post, id: uniqueId() }));
+          posts.unshift(...updateTitles);
+        }));
+      Promise.all(promises).finally(() => setTimeout(updatePosts, 5000, state));
+    };
+
     updatePosts(watchedState);
+
     elements.postsContainer.addEventListener('click', ({ target }) => {
       const { tagName, dataset: { id } } = target;
       if (tagName === 'A' || tagName === 'BUTTON') {
