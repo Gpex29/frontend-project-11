@@ -20,9 +20,13 @@ export default async () => {
   const defaultLanguage = 'ru';
 
   const initState = {
-    form: {
-      validationForm: null, // valid, unvalid
-      loadingProcess: null, // loading, loaded
+    validationForm: {
+      status: 'filling',
+      error: {},
+      isProcessed: false,
+    },
+    loadingProcess: {
+      status: 'idle',
       error: {},
     },
     posts: [],
@@ -49,40 +53,42 @@ export default async () => {
   }).then(() => {
     const watchedState = watch(elements, i18n, initState);
     elements.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (watchedState.validationForm.status === 'processed') {
+        return;
+      }
+      watchedState.validationForm.status = 'processed';
       const visitedURL = watchedState.feeds.map(({ link }) => link);
       const schema = yup.string().required().url().notOneOf(visitedURL);
-      e.preventDefault();
       const formData = new FormData(e.target);
       const url = formData.get('url');
       schema
         .validate(url)
         .then(() => {
-          watchedState.form.loadingProcess = 'loading';
+          watchedState.loadingProcess.status = 'loading';
           axios
             .get(
               proxyUrl(url),
             )
             .then(({ data: { contents } }) => {
-              const { title, description, posts } = parse(contents);
-              const postsWithId = posts.map((post) => ({ ...post, id: uniqueId() }));
+              const { title, description, items } = parse(contents);
+              const posts = items.map((item) => ({ ...item, id: uniqueId() }));
               const feed = { title, description, link: url };
               watchedState.feeds.unshift(feed);
-              watchedState.posts.unshift(...postsWithId);
-              watchedState.form.loadingProcess = 'loaded';
-              watchedState.form.validationForm = 'valid';
+              watchedState.posts.unshift(...posts);
+              watchedState.loadingProcess.status = 'loaded';
+              watchedState.validationForm.status = 'valid';
             })
             .catch((error) => {
-              watchedState.form.loadingProcess = 'loaded';
-              watchedState.form.validationForm = 'unvalid';
-              const message = error.message === 'Network Error' ? 'network' : 'unvalidRSS';
-              watchedState.form.error = { key: `errors.validation.${message}` };
+              watchedState.loadingProcess.status = 'failed';
+              const message = error.isParsingError ? 'unvalidRSS' : 'network';
+              watchedState.loadingProcess.error = { key: `errors.validation.${message}` };
             });
         })
         .catch((error) => {
-          watchedState.form.loadingProcess = 'loaded';
-          watchedState.form.validationForm = 'unvalid';
+          watchedState.validationForm.status = 'invalid ';
           const { message } = error;
-          watchedState.form.error = message;
+          watchedState.validationForm.error = message;
         });
     });
 
@@ -95,12 +101,13 @@ export default async () => {
           proxyUrl(link),
         )
         .then(({ data: { contents } }) => {
-          const updateData = parse(contents);
-          const updateTitles = updateData.posts
-            .filter((post) => !stateTitles.includes(post.title))
-            .map((post) => ({ ...post, id: uniqueId() }));
-          posts.unshift(...updateTitles);
-        }));
+          const { items } = parse(contents);
+          const newPosts = items
+            .filter((item) => !stateTitles.includes(item.title))
+            .map((item) => ({ ...item, id: uniqueId() }));
+          posts.unshift(...newPosts);
+        })
+        .catch((error) => console.log(error.message)));
       Promise.all(promises).finally(() => setTimeout(updatePosts, 5000, state));
     };
 

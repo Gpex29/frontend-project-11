@@ -2,31 +2,41 @@
 import onChange from 'on-change';
 
 export default (elements, i18n, state) => {
-  const renderForm = () => {
-    const { feedback, input } = elements;
-    const { validationForm } = state.form;
-    if (validationForm === 'unvalid') {
-      feedback.textContent = i18n.t(state.form.error.key);
+  const renderValidationForm = () => {
+    const { feedback, form, input } = elements;
+    const { status, error } = state.validationForm;
+    const button = form.querySelector('button');
+    if (status === 'processed') {
+      button.classList.add('disabled');
+      input.setAttribute('readonly', 'true');
+      feedback.textContent = '';
+    }
+    if (status === 'invalid ') {
+      feedback.textContent = i18n.t(error.key);
+      input.removeAttribute('readonly');
       feedback.classList = 'feedback m-0 position-absolute small text-danger';
       input.focus();
-    }
-    if (validationForm === 'valid') {
-      feedback.classList = 'feedback m-0 position-absolute small text-success';
-      feedback.textContent = i18n.t('success');
-      input.focus();
-      input.value = '';
+      button.classList.remove('disabled');
     }
   };
   const renderLoadingForm = () => {
-    const { feedback, form } = elements;
-    const { loadingProcess } = state.form;
+    const { feedback, form, input } = elements;
+    const { status, error } = state.loadingProcess;
     const button = form.querySelector('button');
-    if (loadingProcess === 'loading') {
-      button.classList.add('disabled');
-      feedback.textContent = '';
-    }
-    if (loadingProcess === 'loaded') {
+    if (status === 'loaded') {
       button.classList.remove('disabled');
+      input.removeAttribute('readonly');
+      feedback.textContent = i18n.t('success');
+      feedback.classList = 'feedback m-0 position-absolute small text-success';
+      input.focus();
+      input.value = '';
+    }
+    if (status === 'failed') {
+      button.classList.remove('disabled');
+      input.removeAttribute('readonly');
+      feedback.textContent = i18n.t(error.key);
+      feedback.classList = 'feedback m-0 position-absolute small text-danger';
+      input.focus();
     }
   };
   const renderPosts = () => {
@@ -112,9 +122,10 @@ export default (elements, i18n, state) => {
     elements.feedsContainer.appendChild(divCard);
   };
   const pathToRenderMap = {
-    'form.validationForm': renderForm,
-    'form.loadingProcess': renderLoadingForm,
-    'form.error': renderForm,
+    'validationForm.status': renderValidationForm,
+    'loadingProcess.status': renderLoadingForm,
+    'validationForm.error': renderValidationForm,
+    'loadingProcess.error': renderLoadingForm,
     posts: renderPosts,
     viewedPosts: renderPosts,
     feeds: renderFeeds,

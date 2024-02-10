@@ -1,1 +1,6 @@
-export default (url) => new URL(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`);
+export default (url) => {
+  const urlWithProxy = new URL('/get', 'https://allorigins.hexlet.app');
+  urlWithProxy.searchParams.set('url', url);
+  urlWithProxy.searchParams.set('disableCache', 'true');
+  return urlWithProxy.toString();
+};
