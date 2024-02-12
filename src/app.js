@@ -23,7 +23,6 @@ export default async () => {
     validationForm: {
       status: 'filling',
       error: {},
-      isProcessed: false,
     },
     loadingProcess: {
       status: 'idle',
@@ -54,9 +53,6 @@ export default async () => {
     const watchedState = watch(elements, i18n, initState);
     elements.form.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (watchedState.validationForm.status === 'processed') {
-        return;
-      }
       watchedState.validationForm.status = 'processed';
       const visitedURL = watchedState.feeds.map(({ link }) => link);
       const schema = yup.string().required().url().notOneOf(visitedURL);
@@ -65,6 +61,7 @@ export default async () => {
       schema
         .validate(url)
         .then(() => {
+          watchedState.validationForm.status = 'valid';
           watchedState.loadingProcess.status = 'loading';
           axios
             .get(
@@ -77,7 +74,6 @@ export default async () => {
               watchedState.feeds.unshift(feed);
               watchedState.posts.unshift(...posts);
               watchedState.loadingProcess.status = 'loaded';
-              watchedState.validationForm.status = 'valid';
             })
             .catch((error) => {
               watchedState.loadingProcess.status = 'failed';

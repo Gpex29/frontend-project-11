@@ -7,7 +7,7 @@ export default (elements, i18n, state) => {
     const { status, error } = state.validationForm;
     const button = form.querySelector('button');
     if (status === 'processed') {
-      button.classList.add('disabled');
+      button.setAttribute('disabled', '');
       input.setAttribute('readonly', 'true');
       feedback.textContent = '';
     }
@@ -16,7 +16,7 @@ export default (elements, i18n, state) => {
       input.removeAttribute('readonly');
       feedback.classList = 'feedback m-0 position-absolute small text-danger';
       input.focus();
-      button.classList.remove('disabled');
+      button.removeAttribute('disabled');
     }
   };
   const renderLoadingForm = () => {
@@ -24,7 +24,7 @@ export default (elements, i18n, state) => {
     const { status, error } = state.loadingProcess;
     const button = form.querySelector('button');
     if (status === 'loaded') {
-      button.classList.remove('disabled');
+      button.removeAttribute('disabled');
       input.removeAttribute('readonly');
       feedback.textContent = i18n.t('success');
       feedback.classList = 'feedback m-0 position-absolute small text-success';
@@ -32,7 +32,7 @@ export default (elements, i18n, state) => {
       input.value = '';
     }
     if (status === 'failed') {
-      button.classList.remove('disabled');
+      button.removeAttribute('disabled');
       input.removeAttribute('readonly');
       feedback.textContent = i18n.t(error.key);
       feedback.classList = 'feedback m-0 position-absolute small text-danger';
